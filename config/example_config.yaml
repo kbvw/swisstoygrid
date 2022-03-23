@@ -1,0 +1,27 @@
+---
+# Number of central substations
+substations: 1
+
+# Global voltage level
+voltage_kv: 400
+
+# Component parameters
+parameters:
+
+    internal:
+        r_ohm: 0.005
+        x_ohm: 0.025
+        c_nf: 0.
+        max_i_ka: 1.
+        
+    internal_external:
+        r_ohm: 0.005
+        x_ohm: 0.025
+        c_nf: 0.
+        max_i_ka: 2.
+        
+    external:
+        r_ohm: 0.005
+        x_ohm: 0.025
+        c_nf: 0.
+        max_i_ka: 4.     

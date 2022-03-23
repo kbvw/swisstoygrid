@@ -1,0 +1,49 @@
+---
+# Coordinates of nodes
+coordinates:
+
+    center:
+        center_north_west:  [-1000, 1000]
+        center_north_east:  [1000, 1000]
+        center_south_east:  [1000, -1000]
+        center_south_west:  [-1000, -1000]
+        
+        
+    inner:
+        west_north:         [-3000, 1000]   
+        north_west:         [-1000, 3000]
+        north_east:         [1000, 3000]
+        east_north:         [3000, 1000]
+        east_south:         [3000, -1000]
+        south_east:         [1000, -3000]
+        south_west:         [-1000, -3000]
+        west_south:         [-3000, -1000]
+    
+    outer:
+        west_north:         [-5000, 1000]   
+        north_west:         [-1000, 5000]
+        north_east:         [1000, 5000]
+        east_north:         [5000, 1000]
+        east_south:         [5000, -1000]
+        south_east:         [1000, -5000]
+        south_west:         [-1000, -5000]
+        west_south:         [-5000, -1000]
+        
+# Clockwise order of node names
+order:
+
+    ring: 
+        - 'west_north'
+        - 'north_west'
+        - 'north_east'
+        - 'east_north'
+        - 'east_south'
+        - 'south_east'
+        - 'south_west'
+        - 'west_south'
+        
+    center:
+        - 'center_north_west'
+        - 'center_north_east'
+        - 'center_south_east'
+        - 'center_south_west'
