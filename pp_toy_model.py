@@ -1,7 +1,6 @@
 import pandapower as pp
 import yaml
 
-
 COORDS_PATH = {1: 'config/one_sub_coords.yaml', 
                2: 'config/two_sub_coords.yaml',
                4: 'config/four_sub_coords.yaml'}
