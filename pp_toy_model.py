@@ -1,11 +1,10 @@
 import pandapower as pp
 import yaml
 
+# Hard-coded node coordinates
 COORDS_PATH = {1: 'config/one_sub_coords.yaml', 
                2: 'config/two_sub_coords.yaml',
                4: 'config/four_sub_coords.yaml'}
-PQ_PATH = {1: 'config/one_sub_pq.yaml',
-           2: 'config/two_sub_pq.yaml'}
 
 # Hard-coded mapping from zone to line type
 LINE_PARAMS_MAP = {('center', 'center'): 'internal',
@@ -30,8 +29,6 @@ def create_toy_model(config='config/example_config.yaml'):
     center_order = coords_config['order']['center']
     ring_order = coords_config['order']['ring']
     bus_coords = coords_config['coordinates']
-    
-    #pq_config = yaml.safe_load(open(PQ_PATH[n_subs]))
     
     # Unpack line parameters to pandapower, setting length to 1 km
     line_params = line_params_to_pp(line_params)
