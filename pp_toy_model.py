@@ -174,3 +174,15 @@ def add_tangential_lines(net, zones, bus_idx_map,
                                        from_bus=from_bus, to_bus=to_bus,
                                        name=name,
                                        **params)
+        
+def apply_loads(net, p_mw=None, q_mvar=None):      
+    if p_mw is not None:
+        net.load.loc[p_mw.index, 'p_mw'] = p_mw
+    if q_mvar is not None:
+        net.load.loc[q_mvar.index, 'q_mvar'] = q_mvar
+
+def apply_gens(net, p_mw=None, vm_pu=None):
+    if p_mw is not None:
+        net.load.loc[p_mw.index, 'p_mw'] = p_mw
+    if vm_pu is not None:
+        net.load.loc[vm_pu.index, 'vm_pu'] = vm_pu
