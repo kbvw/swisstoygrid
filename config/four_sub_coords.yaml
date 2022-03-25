@@ -3,10 +3,10 @@
 coordinates:
 
     center:
-        center_north_west:  [-1000, 1000]
-        center_north_east:  [1000, 1000]
-        center_south_east:  [1000, -1000]
-        center_south_west:  [-1000, -1000]
+        north_west:         [-1000, 1000]
+        north_east:         [1000, 1000]
+        south_east:         [1000, -1000]
+        south_west:         [-1000, -1000]
         
         
     inner:
@@ -43,7 +43,7 @@ order:
         - 'west_south'
         
     center:
-        - 'center_north_west'
-        - 'center_north_east'
-        - 'center_south_east'
-        - 'center_south_west'
+        - 'north_west'
+        - 'north_east'
+        - 'south_east'
+        - 'south_west'

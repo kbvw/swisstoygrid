@@ -3,8 +3,8 @@
 coordinates:
 
     center:
-        center_west:    [-1000, 0]
-        center_east:    [1000, 0]
+        west:           [-1000, 0]
+        east:           [1000, 0]
         
     inner:
         south_west:     [-1000, -2000]
@@ -34,5 +34,5 @@ order:
         - 'south_east'
         
     center:
-        - 'center_west'
-        - 'center_east'
+        - 'west'
+        - 'east'

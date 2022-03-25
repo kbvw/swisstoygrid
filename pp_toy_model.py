@@ -81,19 +81,21 @@ def add_buses(net, zone, bus_coords, center_order, ring_order, voltage):
     
     # Store bus indices after creating buses
     for bus in buses:
-        bus_idx = pp.create_bus(net, vn_kv=voltage, name=bus, 
+        name = f'{zone}_{bus}'
+        bus_idx = pp.create_bus(net, vn_kv=voltage, name=name, 
                                 zone=zone, geodata=bus_coords[bus])
         bus_idx_map[bus] = bus_idx
         
         # Add a zero-P-and-Q load to every bus
-        pp.create_load(net, bus_idx, p_mw=0, name=bus, )
+        pp.create_load(net, bus_idx, p_mw=0, name=name)
         
         # Add a zero-P generator to every bus, slack if in center
         if zone == 'center':
             slack = True
         else:
             slack = False 
-        pp.create_gen(net, bus_idx, p_mw=0, name=bus, slack=slack)
+            
+        pp.create_gen(net, bus_idx, p_mw=0, name=name, slack=slack)
 
     return bus_idx_map
 
@@ -111,7 +113,7 @@ def add_center_lines(net, zones, bus_idx_map,
     if n_subs == 2:
         from_buses_idx = [bus_idx_map[zones[0]][center_order[0]]]
         to_buses_idx = [bus_idx_map[zones[0]][center_order[1]]]
-        names = [f'{center_order[0]}_{center_order[1]}']
+        names = [f'{zones[0]}_{center_order[0]}_{zones[1]}_{center_order[1]}']
 
     # Lines connect from one bus to the next bus in the provided order
     if n_subs > 2:
@@ -120,7 +122,8 @@ def add_center_lines(net, zones, bus_idx_map,
         
         from_buses_idx = [bus_idx_map[zones[0]][bus] for bus in center_order]
         to_buses_idx = [bus_idx_map[zones[1]][bus] for bus in to_buses]
-        names = [f'{f}_{t}' for (f, t) in zip(center_order, to_buses)]
+        names = [f'{zones[0]}_{from_bus}_{zones[1]}_{to_bus}'
+                 for (from_bus, to_bus) in zip(center_order, to_buses)]
       
     for (from_bus, to_bus, name) in zip(from_buses_idx, to_buses_idx, names): 
         pp.create_line_from_parameters(net, 
@@ -147,7 +150,8 @@ def add_radial_lines(net, zones, bus_idx_map,
     # Look up bus indices and create line names
     from_buses_idx = [bus_idx_map[zones[0]][bus] for bus in from_buses]   
     to_buses_idx = [bus_idx_map[zones[1]][bus] for bus in ring_order]
-    names = [f'{f}_{t}' for (f, t) in zip(from_buses, ring_order)]
+    names = [f'{zones[0]}_{from_bus}_{zones[1]}_{to_bus}'
+             for (from_bus, to_bus) in zip(from_buses, ring_order)]
     
     for (from_bus, to_bus, name) in zip(from_buses_idx, to_buses_idx, names): 
         pp.create_line_from_parameters(net, 
@@ -167,7 +171,8 @@ def add_tangential_lines(net, zones, bus_idx_map,
     
     from_buses_idx = [bus_idx_map[zones[0]][bus] for bus in ring_order]
     to_buses_idx = [bus_idx_map[zones[1]][bus] for bus in to_buses]
-    names = [f'{f}_{t}' for (f, t) in zip(ring_order, to_buses)]
+    names = [f'{zones[0]}_{from_bus}_{zones[1]}_{to_bus}'
+             for (from_bus, to_bus) in zip(ring_order, to_buses)]
     
     for (from_bus, to_bus, name) in zip(from_buses_idx, to_buses_idx, names): 
         pp.create_line_from_parameters(net, 
