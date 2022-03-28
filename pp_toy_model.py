@@ -13,10 +13,11 @@ LINE_PARAMS_MAP = {('center', 'center'): 'internal',
                    ('inner', 'outer'): 'internal_external',
                    ('outer', 'outer'): 'external'}
 
-def create_toy_model(config='config/example_config.yaml'):
+def create_toy_model(config_file='config/example_config.yaml'):
     
     # Load configuration files
-    config = yaml.safe_load(open(config))
+    with open(config_file, 'r') as config:
+        config = yaml.safe_load(config)
     if config['substations'] not in COORDS_PATH.keys():
         raise NotImplementedError('This model is defined for'
                                   ' 1, 2 or 4 substations.')
