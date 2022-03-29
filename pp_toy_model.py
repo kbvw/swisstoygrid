@@ -13,7 +13,44 @@ LINE_PARAMS_MAP = {('center', 'center'): 'internal',
                    ('inner', 'outer'): 'internal_external',
                    ('outer', 'outer'): 'external'}
 
+# Conversion of total line parameter values to per kilometer in Pandapower
+def _line_params_to_pp(params):
+    pp_params = {}
+    for (line_type, line_type_params) in params.items():
+        pp_params[line_type] = {}
+        pp_params[line_type]['length_km'] = 1.
+        pp_params[line_type]['r_ohm_per_km'] = line_type_params['r_ohm']
+        pp_params[line_type]['x_ohm_per_km'] = line_type_params['x_ohm']
+        pp_params[line_type]['c_nf_per_km'] = line_type_params['c_nf']
+        pp_params[line_type]['max_i_ka'] = line_type_params['max_i_ka']
+        
+    return pp_params
+
 def create_toy_model(config_file='config/example_config.yaml'):
+    """Generates the toy model as a Pandapower network object.
+    
+    The model is implemented for 1, 2 or 4 central substations.
+    Number of substations, voltage and line parameters can be 
+    specified in the config file: see config/example_config.yaml.
+    
+    Parameters
+    ----------
+    config_file : str
+        Path to YAML file containing model parameters. 
+        The default is 'config/example_config.yaml'.
+
+    Raises
+    ------
+    NotImplementedError
+        In case the number of substations specified in the
+        config file is anything other than 1, 2 or 4.
+
+    Returns
+    -------
+    net : pandapowerNet
+        A Pandapower network object of the toy model, with 
+        zero active and reactive power injections everywhere.
+    """
     
     # Load configuration files
     with open(config_file, 'r') as config:
@@ -32,7 +69,7 @@ def create_toy_model(config_file='config/example_config.yaml'):
     bus_coords = coords_config['coordinates']
     
     # Unpack line parameters to pandapower, setting length to 1 km
-    line_params = line_params_to_pp(line_params)
+    line_params = _line_params_to_pp(line_params)
     
     # Create Pandapower Network object
     net = pp.create_empty_network()
@@ -56,18 +93,6 @@ def create_toy_model(config_file='config/example_config.yaml'):
                          ring_order, line_params)
     
     return net
-
-def line_params_to_pp(params):
-    pp_params = {}
-    for (line_type, line_type_params) in params.items():
-        pp_params[line_type] = {}
-        pp_params[line_type]['length_km'] = 1.
-        pp_params[line_type]['r_ohm_per_km'] = line_type_params['r_ohm']
-        pp_params[line_type]['x_ohm_per_km'] = line_type_params['x_ohm']
-        pp_params[line_type]['c_nf_per_km'] = line_type_params['c_nf']
-        pp_params[line_type]['max_i_ka'] = line_type_params['max_i_ka']
-        
-    return pp_params
 
 def add_buses(net, zone, bus_coords, center_order, ring_order, voltage):
     bus_idx_map = {}
