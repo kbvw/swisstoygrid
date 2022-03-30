@@ -1,7 +1,11 @@
+import pandas as pd
 import pandapower as pp
 import yaml
 
-__all__ = ['create_toy_model', 'apply_loads', 'apply_gens']
+__all__ = ['create_toy_model', 
+           'apply_load_from_series', 
+           'apply_gen_from_series', 
+           'apply_load_gen']
 
 # Hard-coded node coordinates
 COORDS_PATH = {1: 'config/one_sub_coords.yaml', 
@@ -201,16 +205,53 @@ def create_toy_model(config_file='config/example_config.yaml'):
     add_radial_lines(('inner', 'outer'))
     add_tangential_lines(('outer', 'outer'))
     
-    return net
+    # Create maps for indexing tables by element name
+    def create_name_map(element):
+        name_map = getattr(net, element)['name']
+        name_map = pd.Series(name_map.index, index=name_map)
+        return name_map
         
-def apply_loads(net, p_mw=None, q_mvar=None):      
-    if p_mw is not None:
-        net.load.loc[p_mw.index, 'p_mw'] = p_mw
-    if q_mvar is not None:
-        net.load.loc[q_mvar.index, 'q_mvar'] = q_mvar
+    net.bus_name_map = create_name_map('bus')
+    net.line_name_map = create_name_map('line')
+    net.load_name_map = create_name_map('load')  
+    net.gen_name_map = create_name_map('gen')    
+    
+    return net
 
-def apply_gens(net, p_mw=None, vm_pu=None):
+def _set_by_element_name(net, element_name, quantity):
+    pp_idx = getattr(net, element_name + '_name_map')[quantity.index]
+    getattr(net, element_name).loc[pp_idx, quantity.name] = quantity.values
+    
+def apply_load_from_series(net, p_mw=None, q_mvar=None):      
     if p_mw is not None:
-        net.load.loc[p_mw.index, 'p_mw'] = p_mw
+        _set_by_element_name(net, 'load', p_mw)
+    if q_mvar is not None:
+        _set_by_element_name(net, 'load', q_mvar)
+
+def apply_gen_from_series(net, p_mw=None, vm_pu=None):
+    if p_mw is not None:
+        _set_by_element_name(net, 'gen', p_mw)
     if vm_pu is not None:
-        net.load.loc[vm_pu.index, 'vm_pu'] = vm_pu
+        _set_by_element_name(net, 'gen', vm_pu)
+        
+def apply_load_gen(net, load_gen_file='config/one_sub_load_gen_example.yaml'):
+    with open(load_gen_file, 'r') as load_gen:
+        load_gen_dict = yaml.safe_load(load_gen)
+        
+    # Parser for load-generation files
+    def load_gen_dict_to_series(load_gen_dict, element_name, quantity_name):
+        quantity_dict = load_gen_dict[element_name][quantity_name]
+        flat_dict = {}
+        for zone, buses_dict in quantity_dict.items():
+            for bus, quantity_value in buses_dict.items():
+                flat_dict[f'{zone}_{bus}'] = quantity_value
+        return pd.Series(flat_dict, dtype=float, name=quantity_name)
+    
+    # Set loads
+    load_p_mw = load_gen_dict_to_series(load_gen_dict, 'load', 'p_mw')
+    load_q_mvar = load_gen_dict_to_series(load_gen_dict, 'load', 'q_mvar')
+    apply_load_from_series(net, load_p_mw, load_q_mvar)
+    
+    gen_p_mw = load_gen_dict_to_series(load_gen_dict, 'gen', 'p_mw')
+    gen_vm_pu = load_gen_dict_to_series(load_gen_dict, 'gen', 'vm_pu')
+    apply_gen_from_series(net, gen_p_mw, gen_vm_pu)
