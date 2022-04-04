@@ -126,21 +126,27 @@ def create_toy_model(config_file='config/example_config.yaml'):
         if n_subs == 2:
             from_buses_idx = [bus_idx_map[zones[0]][center_order[0]]]
             to_buses_idx = [bus_idx_map[zones[0]][center_order[1]]]
-            names = [f'{zones[0]}_{center_order[0]}_{zones[1]}_{center_order[1]}']
+            names = [f'{zones[0]}_{center_order[0]}_'
+                     f'{zones[1]}_{center_order[1]}']
 
         # Lines connect from one bus to the next bus in the provided order
         if n_subs > 2:
             to_buses = center_order[:]
             to_buses.append(to_buses.pop(0))
             
-            from_buses_idx = [bus_idx_map[zones[0]][bus] for bus in center_order]
-            to_buses_idx = [bus_idx_map[zones[1]][bus] for bus in to_buses]
+            from_buses_idx = [bus_idx_map[zones[0]][bus] 
+                              for bus in center_order]
+            to_buses_idx = [bus_idx_map[zones[1]][bus] 
+                            for bus in to_buses]
             names = [f'{zones[0]}_{from_bus}_{zones[1]}_{to_bus}'
                      for (from_bus, to_bus) in zip(center_order, to_buses)]
           
-        for (from_bus, to_bus, name) in zip(from_buses_idx, to_buses_idx, names): 
+        for (from_bus, to_bus, name) in zip(from_buses_idx, 
+                                            to_buses_idx, 
+                                            names): 
             pp.create_line_from_parameters(net, 
-                                           from_bus=from_bus, to_bus=to_bus,
+                                           from_bus=from_bus, 
+                                           to_bus=to_bus,
                                            name=name,
                                            **params)
             
@@ -153,22 +159,29 @@ def create_toy_model(config_file='config/example_config.yaml'):
         # Lines connecting to center are distributed over center buses
         if zones[0] == 'center':
             lines_per_bus = range(len(ring_order)//len(center_order))
-            from_buses = [bus for bus in center_order for l in lines_per_bus]
-            from_buses_idx = [bus_idx_map[zones[0]][bus] for bus in from_buses]
+            from_buses = [bus for bus in center_order 
+                          for l in lines_per_bus]
+            from_buses_idx = [bus_idx_map[zones[0]][bus] 
+                              for bus in from_buses]
         
         # Lines between rings connect buses with the same name
         else:
             from_buses = ring_order
             
         # Look up bus indices and create line names
-        from_buses_idx = [bus_idx_map[zones[0]][bus] for bus in from_buses]   
-        to_buses_idx = [bus_idx_map[zones[1]][bus] for bus in ring_order]
+        from_buses_idx = [bus_idx_map[zones[0]][bus] 
+                          for bus in from_buses]   
+        to_buses_idx = [bus_idx_map[zones[1]][bus] 
+                        for bus in ring_order]
         names = [f'{zones[0]}_{from_bus}_{zones[1]}_{to_bus}'
                  for (from_bus, to_bus) in zip(from_buses, ring_order)]
         
-        for (from_bus, to_bus, name) in zip(from_buses_idx, to_buses_idx, names): 
+        for (from_bus, to_bus, name) in zip(from_buses_idx, 
+                                            to_buses_idx, 
+                                            names): 
             pp.create_line_from_parameters(net, 
-                                           from_bus=from_bus, to_bus=to_bus,
+                                           from_bus=from_bus, 
+                                           to_bus=to_bus,
                                            name=name,
                                            **params)
             
@@ -182,14 +195,19 @@ def create_toy_model(config_file='config/example_config.yaml'):
         to_buses = ring_order[:]
         to_buses.append(to_buses.pop(0))
         
-        from_buses_idx = [bus_idx_map[zones[0]][bus] for bus in ring_order]
-        to_buses_idx = [bus_idx_map[zones[1]][bus] for bus in to_buses]
+        from_buses_idx = [bus_idx_map[zones[0]][bus] 
+                          for bus in ring_order]
+        to_buses_idx = [bus_idx_map[zones[1]][bus] 
+                        for bus in to_buses]
         names = [f'{zones[0]}_{from_bus}_{zones[1]}_{to_bus}'
                  for (from_bus, to_bus) in zip(ring_order, to_buses)]
         
-        for (from_bus, to_bus, name) in zip(from_buses_idx, to_buses_idx, names): 
+        for (from_bus, to_bus, name) in zip(from_buses_idx, 
+                                            to_buses_idx, 
+                                            names): 
             pp.create_line_from_parameters(net, 
-                                           from_bus=from_bus, to_bus=to_bus,
+                                           from_bus=from_bus, 
+                                           to_bus=to_bus,
                                            name=name,
                                            **params)
     
