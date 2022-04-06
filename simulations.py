@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-from pp_toy_model import load_gen_parser
+from pp_toy_model import load_gen_parser, apply_load_gen
 
 class ResLogger:
     def __init__(self, path):
@@ -52,7 +52,7 @@ class ResLogger:
             self.res.write(','+str(res))
         self.res.write('\n')
         
-def iterate_load_gen(path, overwrite=False):
+def iterate_simulations(path, overwrite=False):
     pass
 
 def create_time_series(base_file, net, apply_noise_func, length,
@@ -73,6 +73,7 @@ def create_time_series(base_file, net, apply_noise_func, length,
             
     # Generate time series using the network object and apply-noise function
     for n in range(length):
+        apply_load_gen(net, base_file)
         apply_noise_func(net)
         for (element_name, quantity_name), eq_frame in eq_frame_dict.items():
             quantity_series = net[element_name][quantity_name]
@@ -80,5 +81,3 @@ def create_time_series(base_file, net, apply_noise_func, length,
             eq_frame.loc[n, :] = quantity_series
             
     return eq_frame_dict
-            
-
