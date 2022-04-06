@@ -278,13 +278,14 @@ def load_gen_parser(load_gen_file='config/one_sub_load_gen_example.yaml'):
     with open(load_gen_file, 'r') as load_gen:
         load_gen_dict = yaml.safe_load(load_gen)
     
-    series_list = []
+    load_gen_series_dict = {}
     for (element, quantity) in [('load', 'p_mw'),
                                 ('load', 'q_mvar'),
                                 ('gen', 'p_mw'),
                                 ('gen', 'vm_pu')]:
-        series_list.append(_load_gen_dict_to_series(load_gen_dict,
-                                                    element,
-                                                    quantity))
+        el_q_series = _load_gen_dict_to_series(load_gen_dict,
+                                               element,
+                                               quantity)
+        load_gen_series_dict[(element, quantity)] = el_q_series
 
-    return series_list   
+    return load_gen_series_dict  
