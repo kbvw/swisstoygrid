@@ -283,7 +283,8 @@ def load_gen_parser(load_gen_file='config/one_sub_load_gen_example.yaml'):
                                 ('load', 'q_mvar'),
                                 ('gen', 'p_mw'),
                                 ('gen', 'vm_pu')]:
-        series_list.append(_load_gen_dict_to_series(load_gen_dict[element,
-                                                                  quantity]))
-        
-    return series_list     
+        series_list.append(_load_gen_dict_to_series(load_gen_dict,
+                                                    element,
+                                                    quantity))
+
+    return series_list   
