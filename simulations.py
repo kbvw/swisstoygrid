@@ -1,10 +1,19 @@
 import os
 import pandas as pd
+import yaml
+from tqdm import tqdm
 
-from pp_toy_model import load_gen_parser, apply_load_gen
+from pp_toy_model import (load_gen_parser, apply_load_gen, 
+                          _set_by_element_name)
 
 class ResLogger:
-    def __init__(self, path):
+    def __init__(self, path, metrics):
+        self.columns = [metric.__name__ for metric in metrics]
+
+        # Temporary solution
+        columns_m = [col+'_m' for col in self.columns]
+        self.columns.extend(columns_m)
+        
         self.path = path
         if not os.path.isdir(path): 
             os.mkdir(path)
@@ -46,14 +55,80 @@ class ResLogger:
             self.res.write(','+column)
         self.res.write('\n')
         
-    def write_res(self, idx, res_list):
+    def write_res(self, idx, res_series):
+        res_list = res_series[self.columns].values
         self.res.write(str(idx))
         for res in res_list:
             self.res.write(','+str(res))
         self.res.write('\n')
         
-def iterate_simulations(path, overwrite=False):
-    pass
+def run_simulations(path, net, metrics, simulation_step_func,
+                    until='end', overwrite=False):
+    columns = [metric.__name__ for metric in metrics]
+    
+    # Temporary solution
+    columns_m = [col+'_m' for col in columns]
+    columns.extend(columns_m)
+    
+    # Note: complicated and unoptimized due to time constraints
+    
+    # Load simulation inputs
+    with open(path+'config.yaml', 'r') as config_file:
+        eq_list = yaml.full_load(config_file)
+    eq_frame_dict = {}
+    for (element_name, quantity_name) in eq_list:
+        eq_frame = pd.read_csv(path+f'{element_name}_{quantity_name}.csv',
+                               index_col=0)
+        eq_frame_dict[(element_name, quantity_name)] = eq_frame
+    
+    # Set final simulation step
+    if until=='end':
+        stop = eq_frame.index[-1]
+    else:
+        stop = until
+    
+    # Check progress with logger
+    with ResLogger(path, metrics) as l:
+        if not l.header:
+            l.write_header(columns)
+            start = 0
+        elif not l.last_run:
+            start = 0
+        else:
+            start = l.last_run
+            
+        # Main loop
+        for n in tqdm(range(start, stop)):
+            
+            # Set quantity values on the network object
+            for (e_name, q_name), q_value in eq_frame_dict.items():
+                q_series = pd.Series(q_value.loc[n, :], name=q_name)
+                _set_by_element_name(net, e_name, q_series)
+            
+            # Run user-specified simulation step
+            
+            # Temporary solution
+            results, results_m = simulation_step_func(net, metrics)
+            results_m = results_m.copy()
+            results_m.index += '_m'
+            results = pd.concat([results, results_m])
+            
+            # Write results
+            l.write_res(n, results)
+        
+def init_simulations(path, eq_frame_dict):  
+    if not os.path.isdir(path): 
+        os.mkdir(path)
+        
+    # Note: complicated and unoptimized due to time constraints
+    
+    eq_list = []
+    for (element_name, quantity_name), eq_frame in eq_frame_dict.items():
+        eq_frame.to_csv(path+f'{element_name}_{quantity_name}.csv')
+        eq_list.append((element_name, quantity_name))
+        
+    with open(path+'config.yaml', 'w') as config_file:
+        yaml.dump(eq_list, config_file)
 
 def create_time_series(base_file, net, apply_noise_func, length,
                        elements='all', quantities='all'):
