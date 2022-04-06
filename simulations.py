@@ -1,4 +1,7 @@
 import os
+import pandas as pd
+
+from pp_toy_model import load_gen_parser
 
 class ResLogger:
     def __init__(self, path):
@@ -48,3 +51,34 @@ class ResLogger:
         for res in res_list:
             self.res.write(','+str(res))
         self.res.write('\n')
+        
+def iterate_load_gen(path, overwrite=False):
+    pass
+
+def create_time_series(base_file, net, apply_noise_func, length,
+                       elements='all', quantities='all'):
+    series_dict = load_gen_parser(base_file)
+    
+    # Note: complicated and unoptimized due to time constraints
+    # To do: either use network object or base profile, not both
+    
+    # Check for each element-quantity pair and initialize dataframe
+    eq_frame_dict = {}
+    for (element_name, quantity_name), quantity_value in series_dict.items():
+        if ((elements == 'all' or element_name in elements) 
+            and (quantities == 'all' or quantity_name in quantities)):
+            columns = series_dict[(element_name, quantity_name)].index
+            eq_frame = pd.DataFrame(index=range(length), columns=columns)
+            eq_frame_dict[(element_name, quantity_name)] = eq_frame
+            
+    # Generate time series using the network object and apply-noise function
+    for n in range(length):
+        apply_noise_func(net)
+        for (element_name, quantity_name), eq_frame in eq_frame_dict.items():
+            quantity_series = net[element_name][quantity_name]
+            quantity_series.index = net[element_name]['name']
+            eq_frame.loc[n, :] = quantity_series
+            
+    return eq_frame_dict
+            
+
