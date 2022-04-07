@@ -3,11 +3,11 @@ import pandapower as pp
 import yaml
 
 __all__ = ['create_toy_model', 
-           'set_by_element_name',
+           'set_eq_by_bus_name',
            'apply_load_from_series', 
            'apply_gen_from_series', 
-           'apply_load_gen',
-           'load_gen_parser']
+           'apply_eq_from_yaml',
+           'eq_yaml_parser']
 
 # Hard-coded node coordinates
 COORDS_PATH = {1: 'config/one_sub_coords.yaml', 
@@ -238,55 +238,45 @@ def create_toy_model(config_file='config/example_config.yaml'):
     
     return net
 
-def set_by_element_name(net, element_name, quantity):
-    pp_idx = getattr(net, element_name + '_name_map')[quantity.index]
-    getattr(net, element_name).loc[pp_idx, quantity.name] = quantity.values
+def set_eq_by_bus_name(net, element, eq_series):
+    pp_idx = getattr(net, element + '_name_map')[eq_series.index]
+    getattr(net, element).loc[pp_idx, eq_series.name] = eq_series.values
        
 def apply_load_from_series(net, p_mw=None, q_mvar=None):      
     if p_mw is not None:
-        set_by_element_name(net, 'load', p_mw)
+        set_eq_by_bus_name(net, 'load', p_mw)
     if q_mvar is not None:
-        set_by_element_name(net, 'load', q_mvar)
+        set_eq_by_bus_name(net, 'load', q_mvar)
 
 def apply_gen_from_series(net, p_mw=None, vm_pu=None):
     if p_mw is not None:
-        set_by_element_name(net, 'gen', p_mw)
+        set_eq_by_bus_name(net, 'gen', p_mw)
     if vm_pu is not None:
-        set_by_element_name(net, 'gen', vm_pu)
-        
-def apply_load_gen(net, load_gen_file='config/one_sub_load_gen_example.yaml'):
-    with open(load_gen_file, 'r') as load_gen:
-        load_gen_dict = yaml.safe_load(load_gen)
-    
-    # Set loads
-    load_p_mw = _load_gen_dict_to_series(load_gen_dict, 'load', 'p_mw')
-    load_q_mvar = _load_gen_dict_to_series(load_gen_dict, 'load', 'q_mvar')
-    apply_load_from_series(net, load_p_mw, load_q_mvar)
-    
-    gen_p_mw = _load_gen_dict_to_series(load_gen_dict, 'gen', 'p_mw')
-    gen_vm_pu = _load_gen_dict_to_series(load_gen_dict, 'gen', 'vm_pu')
-    apply_gen_from_series(net, gen_p_mw, gen_vm_pu)
-    
-def load_gen_parser(load_gen_file='config/one_sub_load_gen_example.yaml'):
-    with open(load_gen_file, 'r') as load_gen:
-        load_gen_dict = yaml.safe_load(load_gen)
-    
-    load_gen_series_dict = {}
-    for (element, quantity) in [('load', 'p_mw'),
-                                ('load', 'q_mvar'),
-                                ('gen', 'p_mw'),
-                                ('gen', 'vm_pu')]:
-        el_q_series = _load_gen_dict_to_series(load_gen_dict,
-                                               element,
-                                               quantity)
-        load_gen_series_dict[(element, quantity)] = el_q_series
+        set_eq_by_bus_name(net, 'gen', vm_pu)
 
-    return load_gen_series_dict  
+def apply_eq_from_yaml(net, eq_file='config/one_sub_load_gen_example.yaml'):
+    eq_series_dict = eq_yaml_parser(eq_file)
+    
+    for (element, quantity), eq_series in eq_series_dict.items():
+        set_eq_by_bus_name(net, element, eq_series)
 
-def _load_gen_dict_to_series(load_gen_dict, element_name, quantity_name):
-    quantity_dict = load_gen_dict[element_name][quantity_name]
-    flat_dict = {}
-    for zone, buses_dict in quantity_dict.items():
-        for bus, quantity_value in buses_dict.items():
-            flat_dict[f'{zone}_{bus}'] = quantity_value
-    return pd.Series(flat_dict, dtype=float, name=quantity_name)
+def eq_yaml_parser(eq_file):
+    with open(eq_file, 'r') as eq_yaml:
+        eq_dict = yaml.safe_load(eq_yaml)
+    
+    eq_series_dict = {}
+    for element, e_dict in eq_dict.items():
+        for quantity in e_dict.keys():
+            eq_series = _build_eq_series(eq_dict, element, quantity)
+            eq_series_dict[(element, quantity)] = eq_series
+
+    return eq_series_dict  
+
+def _build_eq_series(eq_dict, element, quantity):
+    zone_bus_dict = eq_dict[element][quantity]
+    name_value_dict = {}
+    for zone, bus_dict in zone_bus_dict.items():
+        for bus, value in bus_dict.items():
+            name = f'{zone}_{bus}'
+            name_value_dict[name] = value
+    return pd.Series(name_value_dict, dtype=float, name=quantity)

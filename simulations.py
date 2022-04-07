@@ -3,8 +3,8 @@ import pandas as pd
 import yaml
 from tqdm import tqdm
 
-from pp_toy_model import (load_gen_parser, apply_load_gen, 
-                          set_by_element_name)
+from pp_toy_model import (eq_yaml_parser, apply_eq_from_yaml,
+                          set_eq_by_bus_name)
 
 class ResLogger:
     def __init__(self, path, metrics):
@@ -103,7 +103,7 @@ def run_simulations(path, net, metrics, simulation_step_func,
             # Set quantity values on the network object
             for (e_name, q_name), q_value in eq_frame_dict.items():
                 q_series = pd.Series(q_value.loc[n, :], name=q_name)
-                set_by_element_name(net, e_name, q_series)
+                set_eq_by_bus_name(net, e_name, q_series)
             
             # Run user-specified simulation step
             
@@ -123,36 +123,36 @@ def init_simulations(path, eq_frame_dict):
     # Note: complicated and unoptimized due to time constraints
     
     eq_list = []
-    for (element_name, quantity_name), eq_frame in eq_frame_dict.items():
-        eq_frame.to_csv(path+f'{element_name}_{quantity_name}.csv')
-        eq_list.append((element_name, quantity_name))
+    for (element, quantity), eq_frame in eq_frame_dict.items():
+        eq_frame.to_csv(path+f'{element}_{quantity}.csv')
+        eq_list.append((element, quantity))
         
     with open(path+'config.yaml', 'w') as config_file:
         yaml.dump(eq_list, config_file)
 
-def create_time_series(base_file, net, apply_noise_func, length,
+def create_time_series(base_yaml, net, apply_noise_func, length,
                        elements='all', quantities='all'):
-    series_dict = load_gen_parser(base_file)
+    eq_series_dict = eq_yaml_parser(base_yaml)
     
     # Note: complicated and unoptimized due to time constraints
     # To do: either use network object or base profile, not both
     
     # Check for each element-quantity pair and initialize dataframe
     eq_frame_dict = {}
-    for (element_name, quantity_name), quantity_value in series_dict.items():
-        if ((elements == 'all' or element_name in elements) 
-            and (quantities == 'all' or quantity_name in quantities)):
-            columns = series_dict[(element_name, quantity_name)].index
+    for (element, quantity), value in eq_series_dict.items():
+        if ((elements == 'all' or element in elements) 
+            and (quantities == 'all' or quantity in quantities)):
+            columns = eq_series_dict[(element, quantity)].index
             eq_frame = pd.DataFrame(index=range(length), columns=columns)
-            eq_frame_dict[(element_name, quantity_name)] = eq_frame
+            eq_frame_dict[(element, quantity)] = eq_frame
             
     # Generate time series using the network object and apply-noise function
     for n in range(length):
-        apply_load_gen(net, base_file)
+        apply_eq_from_yaml(net, base_yaml)
         apply_noise_func(net)
-        for (element_name, quantity_name), eq_frame in eq_frame_dict.items():
-            quantity_series = net[element_name][quantity_name]
-            quantity_series.index = net[element_name]['name']
-            eq_frame.loc[n, :] = quantity_series
+        for (element, quantity), eq_frame in eq_frame_dict.items():
+            value_series = net[element][quantity]
+            value_series.index = net[element]['name']
+            eq_frame.loc[n, :] = value_series
             
     return eq_frame_dict
