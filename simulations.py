@@ -7,13 +7,7 @@ from pp_toy_model import (eq_yaml_parser, apply_eq_from_yaml,
                           set_eq_by_bus_name)
 
 class ResLogger:
-    def __init__(self, path, metrics):
-        self.columns = [metric.__name__ for metric in metrics]
-
-        # Temporary solution
-        columns_m = [col+'_m' for col in self.columns]
-        self.columns.extend(columns_m)
-        
+    def __init__(self, path, metrics):       
         self.path = path
         if not os.path.isdir(path): 
             os.mkdir(path)
@@ -51,6 +45,7 @@ class ResLogger:
         self.res.__exit__(exc_type, exc_value, traceback)
         
     def write_header(self, columns):
+        self.columns = columns
         for column in columns:
             self.res.write(','+column)
         self.res.write('\n')
@@ -64,14 +59,9 @@ class ResLogger:
         
 def run_simulations(path, net, metrics, simulation_step_func,
                     until='end', overwrite=False):
-    columns = [metric.__name__ for metric in metrics]
-    
-    # Temporary solution
-    columns_m = [col+'_m' for col in columns]
-    columns.extend(columns_m)
     
     # Note: complicated and unoptimized due to time constraints
-    
+            
     # Load simulation inputs
     with open(path+'config.yaml', 'r') as config_file:
         eq_list = yaml.full_load(config_file)
@@ -89,13 +79,20 @@ def run_simulations(path, net, metrics, simulation_step_func,
     
     # Check progress with logger
     with ResLogger(path, metrics) as l:
+        
+        # Run simulation step once to infer columns
         if not l.header:
+            columns = simulation_step_func(net, metrics).index
             l.write_header(columns)
             start = 0
+        
+        # If header but no last run, start from beginning
         elif not l.last_run:
             start = 0
+            
+        # Otherwise start after last run
         else:
-            start = l.last_run
+            start = l.last_run + 1
             
         # Main loop
         for n in tqdm(range(start, stop)):
@@ -106,12 +103,7 @@ def run_simulations(path, net, metrics, simulation_step_func,
                 set_eq_by_bus_name(net, e_name, q_series)
             
             # Run user-specified simulation step
-            
-            # Temporary solution
-            results, results_m = simulation_step_func(net, metrics)
-            results_m = results_m.copy()
-            results_m.index += '_m'
-            results = pd.concat([results, results_m])
+            results = simulation_step_func(net, metrics)
             
             # Write results
             l.write_res(n, results)
