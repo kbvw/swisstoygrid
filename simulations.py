@@ -4,7 +4,7 @@ import yaml
 from tqdm import tqdm
 
 from pp_toy_model import (load_gen_parser, apply_load_gen, 
-                          _set_by_element_name)
+                          set_by_element_name)
 
 class ResLogger:
     def __init__(self, path, metrics):
@@ -103,7 +103,7 @@ def run_simulations(path, net, metrics, simulation_step_func,
             # Set quantity values on the network object
             for (e_name, q_name), q_value in eq_frame_dict.items():
                 q_series = pd.Series(q_value.loc[n, :], name=q_name)
-                _set_by_element_name(net, e_name, q_series)
+                set_by_element_name(net, e_name, q_series)
             
             # Run user-specified simulation step
             

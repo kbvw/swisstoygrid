@@ -3,6 +3,7 @@ import pandapower as pp
 import yaml
 
 __all__ = ['create_toy_model', 
+           'set_by_element_name',
            'apply_load_from_series', 
            'apply_gen_from_series', 
            'apply_load_gen',
@@ -237,29 +238,21 @@ def create_toy_model(config_file='config/example_config.yaml'):
     
     return net
 
-def _set_by_element_name(net, element_name, quantity):
+def set_by_element_name(net, element_name, quantity):
     pp_idx = getattr(net, element_name + '_name_map')[quantity.index]
     getattr(net, element_name).loc[pp_idx, quantity.name] = quantity.values
-    
-def _load_gen_dict_to_series(load_gen_dict, element_name, quantity_name):
-    quantity_dict = load_gen_dict[element_name][quantity_name]
-    flat_dict = {}
-    for zone, buses_dict in quantity_dict.items():
-        for bus, quantity_value in buses_dict.items():
-            flat_dict[f'{zone}_{bus}'] = quantity_value
-    return pd.Series(flat_dict, dtype=float, name=quantity_name)
-    
+       
 def apply_load_from_series(net, p_mw=None, q_mvar=None):      
     if p_mw is not None:
-        _set_by_element_name(net, 'load', p_mw)
+        set_by_element_name(net, 'load', p_mw)
     if q_mvar is not None:
-        _set_by_element_name(net, 'load', q_mvar)
+        set_by_element_name(net, 'load', q_mvar)
 
 def apply_gen_from_series(net, p_mw=None, vm_pu=None):
     if p_mw is not None:
-        _set_by_element_name(net, 'gen', p_mw)
+        set_by_element_name(net, 'gen', p_mw)
     if vm_pu is not None:
-        _set_by_element_name(net, 'gen', vm_pu)
+        set_by_element_name(net, 'gen', vm_pu)
         
 def apply_load_gen(net, load_gen_file='config/one_sub_load_gen_example.yaml'):
     with open(load_gen_file, 'r') as load_gen:
@@ -289,3 +282,11 @@ def load_gen_parser(load_gen_file='config/one_sub_load_gen_example.yaml'):
         load_gen_series_dict[(element, quantity)] = el_q_series
 
     return load_gen_series_dict  
+
+def _load_gen_dict_to_series(load_gen_dict, element_name, quantity_name):
+    quantity_dict = load_gen_dict[element_name][quantity_name]
+    flat_dict = {}
+    for zone, buses_dict in quantity_dict.items():
+        for bus, quantity_value in buses_dict.items():
+            flat_dict[f'{zone}_{bus}'] = quantity_value
+    return pd.Series(flat_dict, dtype=float, name=quantity_name)
