@@ -76,15 +76,23 @@ def run_simulations(path, net, metrics, simulation_step_func,
         stop = eq_frame.index[-1]
     else:
         stop = until
-    
+        
+    # Logic for applying n-th inputs and running simulation step
+    def set_eq_and_run(n): 
+        for (e_name, q_name), q_value in eq_frame_dict.items():
+            q_series = pd.Series(q_value.loc[n, :], name=q_name)
+            set_eq_by_bus_name(net, e_name, q_series)
+        return simulation_step_func(net, metrics)
+        
     # Check progress with logger
     with ResLogger(path, metrics) as l:
         
-        # Run simulation step once to infer columns
+        # If no header, run zeroth simulation step to infer column names
         if not l.header:
-            columns = simulation_step_func(net, metrics).index
-            l.write_header(columns)
-            start = 0
+            results = set_eq_and_run(0)
+            l.write_header(results.index)
+            l.write_res(0, results)
+            start = 1
         
         # If header but no last run, start from beginning
         elif not l.last_run:
@@ -96,16 +104,7 @@ def run_simulations(path, net, metrics, simulation_step_func,
             
         # Main loop
         for n in tqdm(range(start, stop)):
-            
-            # Set quantity values on the network object
-            for (e_name, q_name), q_value in eq_frame_dict.items():
-                q_series = pd.Series(q_value.loc[n, :], name=q_name)
-                set_eq_by_bus_name(net, e_name, q_series)
-            
-            # Run user-specified simulation step
-            results = simulation_step_func(net, metrics)
-            
-            # Write results
+            set_eq_and_run(n)
             l.write_res(n, results)
         
 def init_simulations(path, eq_frame_dict):  
