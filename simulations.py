@@ -16,21 +16,26 @@ class ResLogger:
         if os.path.isfile(path+'res.csv'):
             with open(path+'res.csv', 'r') as res:
                 lines = res.readlines()
+                first_line = lines[0]
+                last_line= lines[0]
                 
                 # File is empty with no header
                 if len(lines) == 0:
                     self.header = False
                     self.last_run = None  
-                
-                # File is empty with header
-                elif len(lines[-1].split(',')[0]) == 0:
-                    self.header = True
-                    self.last_run = None
                     
-                # Previous result computations exists
+                # File has header
                 else:
+                    self.columns = pd.Index((first_line[1:-1].split(',')))
                     self.header = True
-                    self.last_run = int(lines[-1].split(',')[0])
+                    
+                    # File is empty with header
+                    if last_line.split(',')[0] == 0:
+                        self.last_run = None
+                    
+                    # Previous result computations exists
+                    else:
+                        self.last_run = int(lines[-1].split(',')[0])
         
         # If result file does not exist
         else:
@@ -89,22 +94,22 @@ def run_simulations(path, net, metrics, simulation_step_func,
         
         # If no header, run zeroth simulation step to infer column names
         if not l.header:
-            results = set_eq_and_run(0)
+            progress = iter(tqdm(range(0, stop)))
+            results = set_eq_and_run(next(progress))
             l.write_header(results.index)
             l.write_res(0, results)
-            start = 1
         
         # If header but no last run, start from beginning
         elif not l.last_run:
-            start = 0
+            progress = tqdm(range(0, stop))
             
         # Otherwise start after last run
         else:
-            start = l.last_run + 1
+            progress = tqdm(range(l.last_run + 1, stop))
             
         # Main loop
-        for n in tqdm(range(start, stop)):
-            set_eq_and_run(n)
+        for n in progress:
+            results = set_eq_and_run(n)
             l.write_res(n, results)
         
 def init_simulations(path, eq_frame_dict):  
