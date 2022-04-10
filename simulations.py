@@ -7,7 +7,7 @@ from pp_toy_model import (eq_yaml_parser, apply_eq_from_yaml,
                           set_eq_by_bus_name)
 
 class ResLogger:
-    def __init__(self, path, metrics):       
+    def __init__(self, path):       
         self.path = path
         if not os.path.isdir(path): 
             os.mkdir(path)
@@ -16,8 +16,6 @@ class ResLogger:
         if os.path.isfile(path+'res.csv'):
             with open(path+'res.csv', 'r') as res:
                 lines = res.readlines()
-                first_line = lines[0]
-                last_line= lines[0]
                 
                 # File is empty with no header
                 if len(lines) == 0:
@@ -26,7 +24,10 @@ class ResLogger:
                     
                 # File has header
                 else:
-                    self.columns = pd.Index((first_line[1:-1].split(',')))
+                    first_line = lines[0]
+                    last_line= lines[0]
+                    self.columns = pd.Index((first_line[1:]
+                                             .rstrip().split(',')))
                     self.header = True
                     
                     # File is empty with header
@@ -63,21 +64,20 @@ class ResLogger:
         self.res.write('\n')
         
 def run_simulations(path, net, metrics, simulation_step_func,
-                    until='end', overwrite=False):
-    
-    # Note: complicated and unoptimized due to time constraints
-            
-    # Load simulation inputs
-    with open(path+'config.yaml', 'r') as config_file:
-        eq_list = yaml.full_load(config_file)
+                    until=None, overwrite=False):
+               
+    # Load simulation inputs   
+    with open(path+'input_config.yaml', 'r') as config_file:
+        eq_list = yaml.safe_load(config_file)
+        
     eq_frame_dict = {}
-    for (element_name, quantity_name) in eq_list:
-        eq_frame = pd.read_csv(path+f'{element_name}_{quantity_name}.csv',
+    for (element, quantity) in eq_list:
+        eq_frame = pd.read_csv(path+f'{element}_{quantity}.csv',
                                index_col=0)
-        eq_frame_dict[(element_name, quantity_name)] = eq_frame
+        eq_frame_dict[(element, quantity)] = eq_frame
     
     # Set final simulation step
-    if until=='end':
+    if until==None:
         stop = eq_frame.index[-1]
     else:
         stop = until
@@ -90,7 +90,7 @@ def run_simulations(path, net, metrics, simulation_step_func,
         return simulation_step_func(net, metrics)
         
     # Check progress with logger
-    with ResLogger(path, metrics) as l:
+    with ResLogger(path) as l:
         
         # If no header, run zeroth simulation step to infer column names
         if not l.header:
@@ -112,18 +112,16 @@ def run_simulations(path, net, metrics, simulation_step_func,
             results = set_eq_and_run(n)
             l.write_res(n, results)
         
-def init_simulations(path, eq_frame_dict):  
+def init_simulations(path, eq_frame_dict):
     if not os.path.isdir(path): 
         os.mkdir(path)
         
-    # Note: complicated and unoptimized due to time constraints
-    
     eq_list = []
     for (element, quantity), eq_frame in eq_frame_dict.items():
         eq_frame.to_csv(path+f'{element}_{quantity}.csv')
-        eq_list.append((element, quantity))
-        
-    with open(path+'config.yaml', 'w') as config_file:
+        eq_list.append([element, quantity])
+    
+    with open(path+'input_config.yaml', 'w') as config_file:
         yaml.dump(eq_list, config_file)
 
 def create_time_series(base_yaml, net, apply_noise_func, length,
