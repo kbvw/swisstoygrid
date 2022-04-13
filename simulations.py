@@ -78,7 +78,7 @@ def run_simulations(path, net, metrics, simulation_step_func,
     
     # Set final simulation step
     if until==None:
-        stop = eq_frame.index[-1]
+        stop = len(eq_frame.index)
     else:
         stop = until
         
@@ -94,14 +94,14 @@ def run_simulations(path, net, metrics, simulation_step_func,
         
         # If no header, run zeroth simulation step to infer column names
         if not l.header:
-            progress = iter(tqdm(range(0, stop)))
+            progress = iter(tqdm(range(stop)))
             results = set_eq_and_run(next(progress))
             l.write_header(results.index)
             l.write_res(0, results)
         
         # If header but no last run, start from beginning
         elif not l.last_run:
-            progress = tqdm(range(0, stop))
+            progress = tqdm(range(stop))
             
         # Otherwise start after last run
         else:
