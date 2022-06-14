@@ -235,7 +235,7 @@ def create_toy_model(config_file='config/example_config.yaml'):
     net.line_name_map = create_name_map('line')
     net.load_name_map = create_name_map('load')  
     net.gen_name_map = create_name_map('gen')    
-    
+
     return net
 
 def set_eq_by_bus_name(net, element, eq_series):
