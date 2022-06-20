@@ -1,7 +1,9 @@
 from itertools import chain
+import pandas as pd
 
 import pp_toy_model
 from network_topology_optimization.grid.data import Grid, GridParams
+from network_topology_optimization.grid.powerflow import GridData
 
 def create_toy_model(config_file='config/example_config.yaml'):
     
@@ -17,20 +19,34 @@ def create_toy_model(config_file='config/example_config.yaml'):
     gn_list = {'gen_' + g.name: net.bus.loc[g.bus]['name']
                for g in net.gen.itertuples()}
     
-    y_list = {c: complex(real=1/c.r_ohm_per_km, imag=1/c.x_ohm_per_km)
+    y_list = {'line_' + c.name: 1/complex(real=c.r_ohm_per_km,
+                                          imag=c.x_ohm_per_km)
               for c in net.line.itertuples()}
     
     s_list = {g: 1/len(net.gen.index)
               for g in gn_list}
     
-    v_list = {e: net.bus['vn_kv'][0] 
+    v_list = {e: net.bus['vn_kv'][0]*10**3
               for e in chain(cn_list, ln_list, gn_list)}
     
-    p_base = 100000
+    p_base = 10**9
     
     return (Grid(cn_list, ln_list, gn_list),
             GridParams(y_list, s_list, v_list, p_base))
 
+def grid_data(path):
+    
+    load = pd.read_csv(path + 'load_p_mw.csv', index_col=0)
+    gen = pd.read_csv(path + 'gen_p_mw.csv', index_col=0)
+    
+    load.columns = 'load_' + load.columns
+    gen.columns = 'gen_' + gen.columns
+    
+    p = pd.concat([-load*(10**6), gen*(10**6)], axis=1)
+    
+    for i in range(min(len(load.index), len(gen.index))):
+        yield GridData(p_list=dict(p.loc[i, :]), q_list={}, mag_list={})
+
 if __name__ == '__main__':
     
-    net = create_toy_model()
+    grid, params = create_toy_model()
