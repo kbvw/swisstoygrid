@@ -10,9 +10,9 @@ __all__ = ['create_toy_model',
            'eq_yaml_parser']
 
 # Hard-coded node coordinates
-COORDS_PATH = {1: 'config/one_sub_coords.yaml', 
-               2: 'config/two_sub_coords.yaml',
-               4: 'config/four_sub_coords.yaml'}
+COORDS_PATH = {1: 'swiss_toy_grid/config/one_sub_coords.yaml', 
+               2: 'swiss_toy_grid/config/two_sub_coords.yaml',
+               4: 'swiss_toy_grid/config/four_sub_coords.yaml'}
 
 # Hard-coded mapping from zone to line type
 LINE_PARAMS_MAP = {('center', 'center'): 'internal',
@@ -38,7 +38,7 @@ def create_toy_model(config_file='config/example_config.yaml'):
     """Generates the toy model as a Pandapower network object.
     
     The model is implemented for 1, 2 or 4 central substations.
-    Number of substations, voltage and line parameters can be 
+    Number of substations, voltage and line parameters can be
     specified in the config file: see config/example_config.yaml.
     
     Parameters
@@ -56,7 +56,7 @@ def create_toy_model(config_file='config/example_config.yaml'):
     Returns
     -------
     net : pandapowerNet
-        A Pandapower network object of the toy model, with 
+        A Pandapower network object of the toy model, with
         zero active and reactive power injections everywhere.
     """
     
@@ -108,7 +108,7 @@ def create_toy_model(config_file='config/example_config.yaml'):
             if zone == 'center':
                 slack = True
             else:
-                slack = False 
+                slack = False
                 
             pp.create_gen(net, bus_idx, p_mw=0, name=name, slack=slack)
 
@@ -161,7 +161,7 @@ def create_toy_model(config_file='config/example_config.yaml'):
         # Lines connecting to center are distributed over center buses
         if zones[0] == 'center':
             lines_per_bus = range(len(ring_order)//len(center_order))
-            from_buses = [bus for bus in center_order 
+            from_buses = [bus for bus in center_order
                           for l in lines_per_bus]
             from_buses_idx = [bus_idx_map[zones[0]][bus] 
                               for bus in from_buses]
@@ -270,7 +270,7 @@ def eq_yaml_parser(eq_file):
             eq_series = _build_eq_series(eq_dict, element, quantity)
             eq_series_dict[(element, quantity)] = eq_series
 
-    return eq_series_dict  
+    return eq_series_dict
 
 def _build_eq_series(eq_dict, element, quantity):
     zone_bus_dict = eq_dict[element][quantity]
